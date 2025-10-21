@@ -13,6 +13,7 @@ module decodificador_de_teclado #(
 	enum logic [4:0] {ESPERANDO, DEBOUNCE, DECOD, SAIDA, VALID} Estado;
 	
 	bit[3:0] lin;
+	logic [3:0] value;
 	
 	always_ff @ (posedge clk or posedge rst) begin
 		if (rst == 1) begin
@@ -37,47 +38,46 @@ module decodificador_de_teclado #(
 				end
 				DECOD: begin
 					if(clk) begin
-						//DEcodifique baseado em lin_matriz e col_matriz...
+						//Decodifique baseado em lin_matriz e col_matriz...
 						//Analisar como fazer: for ou always_comb
-						// Verificar ordem dos bits
-						case (lin_matriz) //Melhor usar lin ao invés de lin_matriz??
-							4'b1110: begin // Linha 0 ativada (bit 0 em 0)
+						case (lin)
+							0: begin // Linha 0 ativada (bit 0 em 0)
 								case (col_matriz)
-								    4'b1110: value <= "1";
-								    4'b1101: value <= "2";
-								    4'b1011: value <= "3";
-								    4'b0111: value <= "A";
-								    //default: value <= 8'h00;
+								    4'b1110: value <= 0x1;
+								    4'b1101: value <= 0x2;
+								    4'b1011: value <= 0x3;
+								    4'b0111: value <= 0xA;
+								    default: value <= 0xF;
 								endcase
 							end
-							4'b1101: begin // Linha 1 ativada (bit 1 em 0)
+							1: begin // Linha 1 ativada (bit 1 em 0)
 								case (col_matriz)
-								    4'b1110: tecla_value <= "4";
-								    4'b1101: tecla_value <= "5";
-								    4'b1011: tecla_value <= "6";
-								    4'b0111: tecla_value <= "B";
-								    //default: tecla_value <= 8'h00;
+								    4'b1110: value <= 0x4;
+								    4'b1101: value <= 0x5;
+								    4'b1011: value <= 0x6;
+								    4'b0111: value <= 0xB;
+								    default: value <= 0xF;
 								endcase
 							end
-							4'b1011: begin // Linha 2 ativada (bit 2 em 0)
+							2: begin // Linha 2 ativada (bit 2 em 0)
 								case (col_matriz)
-								    4'b1110: tecla_value <= "7";
-								    4'b1101: tecla_value <= "8";
-								    4'b1011: tecla_value <= "9";
-								    4'b0111: tecla_value <= "C";
-								    //default: tecla_value <= 8'h00;
+								    4'b1110: value <= 0x7;
+								    4'b1101: value <= 0x8;
+								    4'b1011: value <= 0x9;
+								    4'b0111: value <= 0xC;
+								    default: value <= 0xF;
 								endcase
 							end
-							4'b0111: begin // Linha 3 ativada (bit 3 em 0)
+							3: begin // Linha 3 ativada (bit 3 em 0)
 								case (col_matriz)
-								    4'b1110: tecla_value <= 0xA;
-								    4'b1101: tecla_value <= 0x3;
-								    4'b1011: tecla_value <= 0x2;
-								    4'b0111: tecla_value <= 0x1;
-								    //default: tecla_value <= 8'h00;
+								    4'b1110: value <= 0xF;
+								    4'b1101: value <= 0x0;
+								    4'b1011: value <= 0xE;
+								    4'b0111: value <= 0xD;
+								    default: value <= 0xF;
 								endcase
 							end
-							default: tecla_value <= 8'h00;
+							default: value <= 0xF;
 						endcase
 						Estado <= SAIDA;
 					end
@@ -100,7 +100,7 @@ module decodificador_de_teclado #(
 	
 	always_comb begin
 		if(rst) begin
-			lin_matriz = 4'b0111;
+			lin_matriz = 4'b1110;
 			tecla_value = 0xF;
 			tecla_valid = 0;
 		end
@@ -108,13 +108,13 @@ module decodificador_de_teclado #(
 			case(Estado) begin
 				ESPERANDO:
 					if(lin == 0)
-						lin_matriz = 4'b0111;
+						lin_matriz = 4'b1110;
 					else if(lin == 1)
-						lin_matriz = 4'b1011;
-					else if(lin == 2)
 						lin_matriz = 4'b1101;
+					else if(lin == 2)
+						lin_matriz = 4'b1011;
 					else if(lin == 3)
-						lin_matriz = 4'b1110;		
+						lin_matriz = 4'b0111;		
 				end
 				DEBOU: begin
 					tecla_value = 0xF;
@@ -125,15 +125,15 @@ module decodificador_de_teclado #(
 					tecla_valid = 0;
 				end
 				SAIDA: begin
-					tecla_value = valor;
+					tecla_value = value;
 					tecla_valid = 0;
 				end
-				SAIDA: begin
-					tecla_value = valor;
+				VALID: begin
+					tecla_value = value;
 					tecla_valid = 1;
 				end
 				default: begin
-					lin_matriz = 4'b0111;
+					lin_matriz = 4'b1110;
 					tecla_value = 0xF;
 					tecla_valid = 0;
 				end

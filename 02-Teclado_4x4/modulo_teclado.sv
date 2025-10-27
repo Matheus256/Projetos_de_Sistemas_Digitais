@@ -1,4 +1,3 @@
-// Code your design here
 module decodificador_de_teclado #(
     parameter DEBOUNCE_P = 100)
   
@@ -13,7 +12,7 @@ module decodificador_de_teclado #(
 	bit[6:0] Tp;
 	enum logic [4:0] {ESPERANDO, DEBOUNCE, DECOD, SAIDA, VALID} Estado;
 	
-	bit[3:0] lin;
+  	bit[3:0] lin, col_apertada;
 	logic [3:0] value;
 	
 	always_ff @ (posedge clk or posedge rst) begin
@@ -26,9 +25,11 @@ module decodificador_de_teclado #(
 			case(Estado)
 				ESPERANDO: begin
 					Tp <= 0;
-					if(col_matriz != 4'b1111)
-						Estado <= DEBOUNCE;
-					lin <= (lin + 1) % 4;
+                    if(col_matriz != 4'b1111) begin
+                          col_apertada = col_matriz;
+                          Estado <= DEBOUNCE;
+                    end else
+                  		lin <= (lin + 1) % 4;
 				end
 				DEBOUNCE: begin
 					Tp <= Tp + 1;
@@ -39,43 +40,37 @@ module decodificador_de_teclado #(
 				end
 				DECOD: begin
 					if(clk) begin
-						//Decodifique baseado em lin_matriz e col_matriz...
-						//Analisar como fazer: for ou always_comb
 						case (lin)
-							0: begin // Linha 0 ativada (bit 0 em 0)
-								case (col_matriz)
+							0: begin
+								case (col_apertada)
 								    4'b1110: value <= 4'h1;
 								    4'b1101: value <= 4'h2;
 								    4'b1011: value <= 4'h3;
 								    4'b0111: value <= 4'hA;
-								    default: value <= 4'hF;
 								endcase
 							end
-							1: begin // Linha 1 ativada (bit 1 em 0)
-								case (col_matriz)
+							1: begin
+								case (col_apertada)
 								    4'b1110: value <= 4'h4;
 								    4'b1101: value <= 4'h5;
 								    4'b1011: value <= 4'h6;
 								    4'b0111: value <= 4'hB;
-								    default: value <= 4'hF;
 								endcase
 							end
-							2: begin // Linha 2 ativada (bit 2 em 0)
-								case (col_matriz)
+							2: begin
+								case (col_apertada)
 								    4'b1110: value <= 4'h7;
 								    4'b1101: value <= 4'h8;
 								    4'b1011: value <= 4'h9;
 								    4'b0111: value <= 4'hC;
-								    default: value <= 4'hF;
 								endcase
 							end
-							3: begin // Linha 3 ativada (bit 3 em 0)
-								case (col_matriz)
+							3: begin
+								case (col_apertada)
 								    4'b1110: value <= 4'hF;
 								    4'b1101: value <= 4'h0;
 								    4'b1011: value <= 4'hE;
 								    4'b0111: value <= 4'hD;
-								    default: value <= 4'hF;
 								endcase
 							end
 							default: value <= 4'hF;
@@ -108,6 +103,8 @@ module decodificador_de_teclado #(
 		else
 			case(Estado) 
 				ESPERANDO:begin
+                  tecla_value = 4'hF;
+                  tecla_valid = 0;
 					if(lin == 0)
 						lin_matriz = 4'b1110;
 					else if(lin == 1)
@@ -142,3 +139,4 @@ module decodificador_de_teclado #(
 	end
 
 endmodule
+
